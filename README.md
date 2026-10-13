@@ -19,10 +19,11 @@ The core workflow includes:
       <img src="https://github.com/user-attachments/assets/667bfe54-9d4a-49d8-87b8-a6ea8d2ae855" width="100%" />
     </td>
     <td align="center">
-      <img src="https://github.com/user-attachments/assets/3d532ea6-9d17-4990-9876-cd22c02fe821" width="100%" />
+      <img src="https://github.com/user-attachments/assets/c778b010-0b2c-4d0e-89ce-0cf08cfff58a" width="100%" />
     </td>
   </tr>
 </table>
+
 
 ---
 
