@@ -7,13 +7,22 @@ The core workflow includes:
 - Semantic Segmentation: Utilizing a U-Net architecture to identify land cover.
 - Green Scoring: Computing an environmental index based on detected vegetation (forest, agriculture, etc.).
 - Automated Lifecycle: From data preprocessing to serverless inference deployment.
-- The final model is accessible via a custom-built Streamlit interface, allowing users to upload satellite images and receive instant Green Score results : 
+- The final model is accessible through two interfaces: a Streamlit app and a custom web front-end (FastAPI + HTML/JS). Both let users upload satellite images and get the Green Score instantly, using either the cloud endpoint or the local model: 
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/667bfe54-9d4a-49d8-87b8-a6ea8d2ae855" width="45%" />
-  <img src="https://github.com/user-attachments/assets/ecd3227a-e16d-443e-a5c5-137cf2e30208" width="45%" />
-</p>
-
+<table align="center">
+  <tr>
+    <th align="center"> Visualisation Streamlit</th>
+    <th align="center"> Front-end FastAPI</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/667bfe54-9d4a-49d8-87b8-a6ea8d2ae855" width="100%" />
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/3d532ea6-9d17-4990-9876-cd22c02fe821" width="100%" />
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -249,16 +258,29 @@ This creates:
 
 Use deploy_endpoint=false when you want to avoid endpoint costs.
 
-### 5. Test Endpoint Inference
+### 6. Test Endpoint Inference
 
-Test endpoint directly:
+Two interfaces are available to test the model. Both support two inference modes:
+- **Cloud API**: sends the image to API Gateway → Lambda → SageMaker endpoint (the endpoint must be `InService`)
+- **Local model**: runs inference directly with `artifacts/models/best_model.pth`
+
+**Option A: Web front-end (FastAPI)**
+
+```bash
+uvicorn server:app --app-dir src/app/web --reload
+```
+Then open http://localhost:8000.
+
+Features: drag & drop upload, Green Score gauge, side-by-side or overlay view of the segmentation mask (with adjustable opacity) and per-class proportions.
+
+The API Gateway URL and model path can be overridden with the `API_GATEWAY_URL` and `LOCAL_MODEL_PATH` environment variables.
+
+**Option B: Streamlit app**
 
 ```bash
 streamlit run src/app/streamlit_app.py
 ```
-You will be able to upload satellite image and calculate the green score using a local inference mode or using the API gateway route
-
-### 6. Monitoring
+### 7. Monitoring
 
 This project uses Amazon CloudWatch to monitor deployed services.
 
@@ -271,7 +293,7 @@ Tracked metrics:
 A CloudWatch dashboard is automatically provisioned with Terraform for quick monitoring and debugging.
 
 
-### 7. Cleanup 
+### 8. Cleanup 
 
 If you want to delete the SageMaker endpoint, set `deploy_endpoint=false` in `terraform.tfvars` or run:
 
