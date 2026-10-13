@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urban Green Score</title>
+<style>
+  :root {
+    --bg: #f3f5f1; --surface: #ffffff; --surface-2: #eef2eb; --text: #17201a;
+    --muted: #5d6a60; --border: #dce3d9; --accent: #2e8b4d; --accent-ink: #ffffff;
+    --danger: #b83227; --danger-bg: #fbeceb; --radius: 14px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1310; --surface: #151c17; --surface-2: #1c251e; --text: #e5ece6;
+      --muted: #8f9d92; --border: #27312a; --accent: #4cbf6c; --accent-ink: #0a170e;
+      --danger: #ff7b6e; --danger-bg: #2a1614; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1, h2 { margin: 0; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  code { display: block; margin-top: 6px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2);
+         font-size: .75rem; word-break: break-all; color: var(--text); }
+  .muted { color: var(--muted); }
+
+  /* ---- header */
+  .topbar { border-bottom: 1px solid var(--border); background: var(--surface); }
+  .topbar-inner { max-width: 1280px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 38px; height: 38px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; }
+  .logo svg { width: 22px; height: 22px; fill: var(--accent-ink); }
+  .topbar h1 { font-size: 1.15rem; }
+  .topbar p { margin: 0; font-size: .85rem; color: var(--muted); }
+
+  /* ---- layout */
+  .layout { max-width: 1280px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; padding: 16px; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+  .controls { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 20px; }
+  @media (max-width: 900px) { .controls { position: static; } }
+  .results { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+  /* ---- segmented control */
+  .segmented { display: flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 3px; }
+  .segmented button { flex: 1; border: 0; background: transparent; color: var(--muted); padding: 8px 10px;
+                      border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+  .segmented button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .segmented button:disabled { opacity: .45; cursor: not-allowed; }
+  .segmented.small button { padding: 5px 10px; font-size: .85rem; }
+  .hint { margin: 0; font-size: .82rem; color: var(--muted); }
+  .warn { color: var(--danger); font-weight: 600; }
+
+  /* ---- dropzone */
+  .dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 14px; cursor: pointer; text-align: center;
+              display: flex; flex-direction: column; align-items: center; gap: 8px; transition: border-color .15s, background .15s; }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: var(--surface-2); }
+  .dropzone img { max-width: 100%; max-height: 160px; border-radius: 8px; }
+  .dropzone strong { display: block; }
+  .dropzone span { font-size: .82rem; color: var(--muted); word-break: break-all; }
+
+  .primary { border: 0; border-radius: 10px; padding: 12px; font: inherit; font-weight: 700; cursor: pointer;
+             background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .primary:disabled { opacity: .5; cursor: not-allowed; }
+  .spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { background: var(--danger-bg); color: var(--danger); border-radius: 10px; padding: 10px 12px; font-size: .85rem; word-break: break-word; }
+
+  .legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: .85rem; }
+  .legend li { display: flex; align-items: center; gap: 8px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid rgba(127,127,127,.35); }
+
+  /* ---- score */
+  .score-card { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .gauge-wrap { position: relative; width: 130px; height: 130px; flex: none; }
+  .gauge { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gauge circle { fill: none; stroke-width: 11; }
+  .gauge .track { stroke: var(--surface-2); }
+  .gauge .arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .8s ease, stroke .8s ease; }
+  .gauge-label { position: absolute; inset: 0; display: flex; align-items: baseline; justify-content: center; padding-top: 44px; }
+  .gauge-label b { font-size: 2rem; font-variant-numeric: tabular-nums; }
+  .gauge-label small { color: var(--muted); margin-left: 2px; }
+  .score-text h3 { margin: 4px 0 2px; font-size: 1.3rem; }
+  .score-text p { margin: 0; }
+  .meta { font-size: .8rem; color: var(--muted); margin-top: 6px !important; }
+
+  /* ---- viewer */
+  .viewer-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .side { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .side { grid-template-columns: 1fr; } }
+  figure { margin: 0; }
+  figcaption { font-size: .82rem; color: var(--muted); margin-top: 6px; text-align: center; }
+  .frame { background: var(--surface-2); border-radius: 10px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; position: relative; }
+  .frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .frame .mask, .stack img { image-rendering: pixelated; }
+  .placeholder { font-size: .85rem; color: var(--muted); }
+  .stack { max-width: 560px; margin: 0 auto; }
+  .stack img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .slider { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 12px; font-size: .85rem; color: var(--muted); }
+  .slider input { width: 200px; accent-color: var(--accent); }
+
+  /* ---- bars */
+  .bars { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .bar-row { display: grid; grid-template-columns: 130px 1fr 60px; gap: 10px; align-items: center; font-size: .88rem; }
+  .bar-name { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; width: 0; transition: width .7s ease; }
+  .bar-val { text-align: right; font-variant-numeric: tabular-nums; }
+
+  details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+  pre { margin: 12px 0 0; background: var(--surface-2); border-radius: 10px; padding: 12px; font-size: .78rem; overflow: auto; max-height: 320px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.2 3.8 21.3l1.9.7.9-2.3c.5.2 1 .3 1.4.3C19 20 22 3 22 3c-1 2-8 2.3-13 3.3S2 11.5 2 13.5s1.8 3.8 1.8 3.8C7 8 17 8 17 8z"/></svg></div>
+    <div>
+      <h1>Urban Green Score</h1>
+      <p>Segmentation d'images satellite et estimation du taux de végétation urbaine</p>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- Panneau de contrôle -->
+  <aside class="card controls">
+    <h2>Mode d'inférence</h2>
+    <div class="segmented" id="modeSwitch">
+      <button data-mode="cloud" class="active">Cloud API</button>
+      <button data-mode="local">Modèle local</button>
+    </div>
+    <p class="hint" id="modeHint">Chargement de la configuration…</p>
+
+    <h2>Image satellite</h2>
+    <label class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="image/png,image/jpeg" hidden>
+      <img id="thumb" alt="" hidden>
+      <div><strong id="dropTitle">Glisse une image ici</strong><span id="dropSub">ou clique pour choisir (PNG, JPG)</span></div>
+    </label>
+
+    <button class="primary" id="runBtn" disabled>Lancer l'analyse</button>
+    <div class="error" id="error" hidden></div>
+
+    <h2>Légende</h2>
+    <ul class="legend" id="legend"></ul>
+  </aside>
+
+  <!-- Résultats -->
+  <section class="results">
+    <div class="card score-card">
+      <div class="gauge-wrap">
+        <svg class="gauge" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52"/>
+          <circle class="arc" id="gaugeArc" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+        </svg>
+        <div class="gauge-label"><b id="scoreValue">–</b><small>/100</small></div>
+      </div>
+      <div class="score-text">
+        <h2>Green Score</h2>
+        <h3 id="scoreTitle">En attente d'une analyse</h3>
+        <p class="muted" id="scoreSub">Charge une image satellite puis lance l'analyse.</p>
+        <p class="meta" id="metaText"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="viewer-head">
+        <h2>Visualisation</h2>
+        <div class="segmented small" id="viewSwitch">
+          <button data-view="side" class="active">Côte à côte</button>
+          <button data-view="overlay" disabled>Superposition</button>
+        </div>
+      </div>
+
+      <div class="side" id="sideView">
+        <figure>
+          <div class="frame"><img id="srcImg" alt="Image source" hidden><span class="placeholder" id="srcPh">Aucune image</span></div>
+          <figcaption>Image source</figcaption>
+        </figure>
+        <figure>
+          <div class="frame"><img id="maskImg" class="mask" alt="Masque" hidden><span class="placeholder" id="maskPh">Le masque apparaîtra ici</span></div>
+          <figcaption>Masque de segmentation</figcaption>
+        </figure>
+      </div>
+
+      <div id="overlayView" hidden>
+        <div class="frame stack"><img id="ovBase" alt=""><img id="ovMask" alt=""></div>
+        <label class="slider">Opacité du masque
+          <input type="range" id="opacity" min="0" max="100" value="55">
+          <span id="opVal">55 %</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Proportions des classes</h2>
+      <div class="bars" id="bars"><p class="muted" style="margin:0">Aucun résultat pour l'instant.</p></div>
+    </div>
+
+    <details class="card">
+      <summary>Détails JSON</summary>
+      <pre id="json">—</pre>
+    </details>
+  </section>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const C = 2 * Math.PI * 52; // circonférence de la jauge
+
+const DEFAULT_CLASSES = [
+  { id: 0, name: "no-data", color: [0, 0, 0] },
+  { id: 1, name: "background", color: [200, 200, 200] },
+  { id: 2, name: "building", color: [128, 128, 128] },
+  { id: 3, name: "road", color: [255, 255, 0] },
+  { id: 4, name: "water", color: [0, 0, 255] },
+  { id: 5, name: "barren", color: [139, 69, 19] },
+  { id: 6, name: "forest", color: [0, 255, 0] },
+  { id: 7, name: "agriculture", color: [0, 128, 0] },
+];
+
+const state = { mode: "cloud", file: null, config: null, classes: DEFAULT_CLASSES, loading: false };
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const rgb = (c) => `rgb(${c.join(",")})`;
+
+// ------------------------------------------------ config
+async function loadConfig() {
+  try {
+    const r = await fetch("/api/config");
+    state.config = await r.json();
+    state.classes = state.config.classes || DEFAULT_CLASSES;
+  } catch {
+    state.config = null;
+  }
+  renderLegend();
+  updateModeHint();
+}
+
+function renderLegend() {
+  $("#legend").innerHTML = state.classes
+    .map((c) => `<li><span class="swatch" style="background:${rgb(c.color)}"></span>${esc(c.name)}</li>`)
+    .join("");
+}
+
+function updateModeHint() {
+  const c = state.config, el = $("#modeHint");
+  if (!c) { el.innerHTML = `<span class="warn">Serveur injoignable.</span>`; return; }
+  if (state.mode === "cloud") {
+    el.innerHTML = `Envoie l'image à l'API Gateway → SageMaker. L'endpoint doit être <b>InService</b>.<code>${esc(c.api_url)}</code>`;
+  } else {
+    el.innerHTML = c.local_model_available
+      ? `Inférence sur ta machine avec :<code>${esc(c.model_path)}</code>`
+      : `<span class="warn">Modèle introuvable</span><code>${esc(c.model_path)}</code>`;
+  }
+}
+
+// ------------------------------------------------ switches
+document.querySelectorAll("#modeSwitch button").forEach((b) =>
+  b.addEventListener("click", () => {
+    state.mode = b.dataset.mode;
+    document.querySelectorAll("#modeSwitch button").forEach((x) => x.classList.toggle("active", x === b));
+    updateModeHint();
+  })
+);
+
+function setView(view) {
+  document.querySelectorAll("#viewSwitch button").forEach((x) => x.classList.toggle("active", x.dataset.view === view));
+  $("#sideView").hidden = view !== "side";
+  $("#overlayView").hidden = view !== "overlay";
+}
+document.querySelectorAll("#viewSwitch button").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
+
+$("#opacity").addEventListener("input", (e) => {
+  $("#ovMask").style.opacity = e.target.value / 100;
+  $("#opVal").textContent = `${e.target.value} %`;
+});
+
+// ------------------------------------------------ upload
+const dz = $("#dropzone");
+$("#fileInput").addEventListener("change", (e) => e.target.files[0] && setFile(e.target.files[0]));
+["dragenter", "dragover"].forEach((t) => dz.addEventListener(t, (e) => { e.preventDefault(); dz.classList.add("drag"); }));
+["dragleave", "drop"].forEach((t) => dz.addEventListener(t, (e) => { e.preventDefault(); dz.classList.remove("drag"); }));
+dz.addEventListener("drop", (e) => e.dataTransfer.files[0] && setFile(e.dataTransfer.files[0]));
+
+function setFile(file) {
+  if (!/^image\/(png|jpeg)$/.test(file.type)) { showError("Format non supporté : PNG ou JPG uniquement."); return; }
+  hideError();
+  state.file = file;
+  const url = URL.createObjectURL(file);
+  $("#thumb").src = url; $("#thumb").hidden = false;
+  $("#dropTitle").textContent = "Changer d'image";
+  $("#dropSub").textContent = file.name;
+  showImg("#srcImg", "#srcPh", url);
+  resetResults();
+  $("#runBtn").disabled = false;
+}
+
+function showImg(imgSel, phSel, src) {
+  $(imgSel).src = src; $(imgSel).hidden = false; $(phSel).hidden = true;
+}
+
+function resetResults() {
+  $("#maskImg").hidden = true; $("#maskPh").hidden = false;
+  document.querySelector('[data-view="overlay"]').disabled = true;
+  setView("side");
+  setGauge(null);
+  $("#scoreTitle").textContent = "Prêt à analyser";
+  $("#scoreSub").textContent = "Clique sur « Lancer l'analyse ».";
+  $("#metaText").textContent = "";
+  $("#bars").innerHTML = `<p class="muted" style="margin:0">Aucun résultat pour l'instant.</p>`;
+  $("#json").textContent = "—";
+}
+
+// ------------------------------------------------ analyse
+$("#runBtn").addEventListener("click", run);
+
+async function run() {
+  if (!state.file || state.loading) return;
+  setLoading(true); hideError();
+  const fd = new FormData();
+  fd.append("file", state.file);
+  fd.append("mode", state.mode);
+  const t0 = performance.now();
+  try {
+    const r = await fetch("/api/predict", { method: "POST", body: fd });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.detail || `Erreur ${r.status}`);
+    renderResult(data, Math.round(performance.now() - t0));
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderResult(d, ms) {
+  const src = `data:image/png;base64,${d.image_png_base64}`;
+  const mask = `data:image/png;base64,${d.mask_png_base64}`;
+  showImg("#srcImg", "#srcPh", src);
+  showImg("#maskImg", "#maskPh", mask);
+  $("#ovBase").src = src; $("#ovMask").src = mask;
+  $("#ovMask").style.opacity = $("#opacity").value / 100;
+  document.querySelector('[data-view="overlay"]').disabled = false;
+
+  setGauge(d.green_score);
+  $("#scoreTitle").textContent = `${d.green_score.toFixed(2)} / 100`;
+  $("#scoreSub").textContent = "Score de végétation estimé sur l'image.";
+  $("#metaText").textContent =
+    `${d.mode === "cloud" ? "Cloud API" : "Modèle local"} · masque ${d.mask_shape.join(" × ")} px · ${ms} ms`;
+
+  renderBars(d.class_proportions);
+
+  const { image_png_base64, mask_png_base64, ...rest } = d;
+  $("#json").textContent = JSON.stringify(rest, null, 2);
+}
+
+function setGauge(score) {
+  const arc = $("#gaugeArc");
+  if (score == null) {
+    arc.style.strokeDashoffset = C; $("#scoreValue").textContent = "–"; return;
+  }
+  const s = Math.max(0, Math.min(100, score));
+  arc.style.strokeDashoffset = C * (1 - s / 100);
+  arc.style.stroke = `hsl(${25 + (110 * s) / 100}, 62%, 45%)`;
+  $("#scoreValue").textContent = Math.round(s);
+}
+
+function classFor(key) {
+  const k = String(key).toLowerCase();
+  return state.classes.find((c) => c.name.toLowerCase() === k || String(c.id) === k)
+    || { name: String(key), color: [150, 150, 150] };
+}
+
+function renderBars(props) {
+  let entries = Array.isArray(props) ? props.map((v, i) => [i, v]) : Object.entries(props || {});
+  entries = entries.filter(([, v]) => typeof v === "number");
+  if (!entries.length) { $("#bars").innerHTML = `<p class="muted" style="margin:0">Pas de proportions renvoyées.</p>`; return; }
+
+  // fractions (0-1) ou pourcentages (0-100) : on normalise en %
+  const scale = Math.max(...entries.map(([, v]) => v)) <= 1.0001 ? 100 : 1;
+  entries.sort((a, b) => b[1] - a[1]);
+
+  $("#bars").innerHTML = entries.map(([k, v]) => {
+    const c = classFor(k), pct = v * scale;
+    return `<div class="bar-row">
+      <span class="bar-name"><span class="swatch" style="background:${rgb(c.color)}"></span>${esc(c.name)}</span>
+      <div class="bar-track"><div class="bar-fill" data-w="${pct}" style="background:${rgb(c.color)}"></div></div>
+      <span class="bar-val">${pct.toFixed(1)} %</span>
+    </div>`;
+  }).join("");
+  requestAnimationFrame(() =>
+    document.querySelectorAll(".bar-fill").forEach((el) => (el.style.width = `${Math.min(100, el.dataset.w)}%`))
+  );
+}
+
+// ------------------------------------------------ ui helpers
+function setLoading(on) {
+  state.loading = on;
+  const b = $("#runBtn");
+  b.disabled = on || !state.file;
+  b.innerHTML = on ? `<span class="spinner"></span>Analyse en cours…` : "Lancer l'analyse";
+}
+function showError(msg) { const e = $("#error"); e.textContent = msg; e.hidden = false; }
+function hideError() { $("#error").hidden = true; }
+
+loadConfig();
+</script>
+</body>
+</html>
