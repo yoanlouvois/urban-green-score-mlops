@@ -204,7 +204,7 @@ python src/scripts/run_training.py
 This step:
 
 - trains the U-Net segmentation model
-- stores model artifacts in S3
+- stores model artifacts in the S3 bucket
 - logs training metrics in CloudWatch
 
 
