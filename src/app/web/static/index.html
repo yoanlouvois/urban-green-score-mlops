@@ -6,21 +6,16 @@
 <title>Urban Green Score</title>
 <style>
   :root {
-    --bg: #f3f5f1; --surface: #ffffff; --surface-2: #eef2eb; --text: #17201a;
-    --muted: #5d6a60; --border: #dce3d9; --accent: #2e8b4d; --accent-ink: #ffffff;
-    --danger: #b83227; --danger-bg: #fbeceb; --radius: 14px;
-    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0e1310; --surface: #151c17; --surface-2: #1c251e; --text: #e5ece6;
-      --muted: #8f9d92; --border: #27312a; --accent: #4cbf6c; --accent-ink: #0a170e;
-      --danger: #ff7b6e; --danger-bg: #2a1614; --shadow: none;
-    }
+    color-scheme: dark;
+    --bg: #070a08; --surface: #0e1310; --surface-2: #151c17; --surface-3: #1b241e;
+    --text: #e2eae4; --muted: #7b897f; --border: #1d2620; --accent: #3ec46a; --accent-ink: #04140a;
+    --danger: #ff7b6e; --danger-bg: #2a1311; --radius: 14px;
+    --shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 8px 24px rgba(0,0,0,.35);
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
+    margin: 0; color: var(--text); min-height: 100vh;
+    background: radial-gradient(1200px 500px at 15% -10%, rgba(62,196,106,.07), transparent 60%), var(--bg);
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   h1, h2 { margin: 0; }
@@ -30,26 +25,38 @@
   .muted { color: var(--muted); }
 
   /* ---- header */
-  .topbar { border-bottom: 1px solid var(--border); background: var(--surface); }
-  .topbar-inner { max-width: 1280px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
-  .logo { width: 38px; height: 38px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; }
+  .topbar { border-bottom: 1px solid var(--border); background: rgba(14,19,16,.75); backdrop-filter: blur(8px); }
+  .topbar-inner { max-width: 1840px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 38px; height: 38px; border-radius: 10px; background: var(--accent); display: grid; place-items: center;
+          box-shadow: 0 0 18px rgba(62,196,106,.35); }
   .logo svg { width: 22px; height: 22px; fill: var(--accent-ink); }
   .topbar h1 { font-size: 1.15rem; }
   .topbar p { margin: 0; font-size: .85rem; color: var(--muted); }
 
   /* ---- layout */
-  .layout { max-width: 1280px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
-  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; padding: 16px; } }
+  /* 3 colonnes : contrôles | visualisation | résultats */
+  .layout { max-width: 1840px; margin: 0 auto; padding: 24px 28px; display: grid;
+            grid-template-columns: 300px minmax(0, 1fr) 400px; gap: 22px; align-items: start; }
+  @media (max-width: 1350px) {
+    .layout { grid-template-columns: 300px minmax(0, 1fr); }
+    .insights { grid-column: 1 / -1; display: grid !important; grid-template-columns: 1fr 1fr; }
+    .insights > details { grid-column: 1 / -1; }
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; padding: 16px; }
+    .insights { grid-template-columns: 1fr; }
+  }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
   .controls { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 20px; }
   @media (max-width: 900px) { .controls { position: static; } }
-  .results { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .viewer-col { min-width: 0; }
+  .insights { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
 
   /* ---- segmented control */
   .segmented { display: flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 3px; }
   .segmented button { flex: 1; border: 0; background: transparent; color: var(--muted); padding: 8px 10px;
                       border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
-  .segmented button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .segmented button.active { background: var(--surface-3); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
   .segmented button:disabled { opacity: .45; cursor: not-allowed; }
   .segmented.small button { padding: 5px 10px; font-size: .85rem; }
   .hint { margin: 0; font-size: .82rem; color: var(--muted); }
@@ -65,7 +72,8 @@
 
   .primary { border: 0; border-radius: 10px; padding: 12px; font: inherit; font-weight: 700; cursor: pointer;
              background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .primary:disabled { opacity: .5; cursor: not-allowed; }
+  .primary:not(:disabled):hover { box-shadow: 0 0 22px rgba(62,196,106,.35); }
+  .primary:disabled { opacity: .4; cursor: not-allowed; }
   .spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error { background: var(--danger-bg); color: var(--danger); border-radius: 10px; padding: 10px 12px; font-size: .85rem; word-break: break-word; }
@@ -75,13 +83,14 @@
   .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid rgba(127,127,127,.35); }
 
   /* ---- score */
-  .score-card { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-  .gauge-wrap { position: relative; width: 130px; height: 130px; flex: none; }
+  .score-card { display: flex; align-items: center; gap: 20px; }
+  .score-text { flex: 1; min-width: 0; }
+  .gauge-wrap { position: relative; width: 140px; height: 140px; flex: none; }
   .gauge { width: 100%; height: 100%; transform: rotate(-90deg); }
   .gauge circle { fill: none; stroke-width: 11; }
   .gauge .track { stroke: var(--surface-2); }
   .gauge .arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .8s ease, stroke .8s ease; }
-  .gauge-label { position: absolute; inset: 0; display: flex; align-items: baseline; justify-content: center; padding-top: 44px; }
+  .gauge-label { position: absolute; inset: 0; display: flex; align-items: baseline; justify-content: center; padding-top: 48px; }
   .gauge-label b { font-size: 2rem; font-variant-numeric: tabular-nums; }
   .gauge-label small { color: var(--muted); margin-left: 2px; }
   .score-text h3 { margin: 4px 0 2px; font-size: 1.3rem; }
@@ -94,18 +103,18 @@
   @media (max-width: 600px) { .side { grid-template-columns: 1fr; } }
   figure { margin: 0; }
   figcaption { font-size: .82rem; color: var(--muted); margin-top: 6px; text-align: center; }
-  .frame { background: var(--surface-2); border-radius: 10px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; position: relative; }
+  .frame { background: #050706; border: 1px solid var(--border); border-radius: 10px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; position: relative; }
   .frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .frame .mask, .stack img { image-rendering: pixelated; }
   .placeholder { font-size: .85rem; color: var(--muted); }
-  .stack { max-width: 560px; margin: 0 auto; }
+  .stack { max-width: 760px; margin: 0 auto; }
   .stack img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
   .slider { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 12px; font-size: .85rem; color: var(--muted); }
   .slider input { width: 200px; accent-color: var(--accent); }
 
   /* ---- bars */
   .bars { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
-  .bar-row { display: grid; grid-template-columns: 130px 1fr 60px; gap: 10px; align-items: center; font-size: .88rem; }
+  .bar-row { display: grid; grid-template-columns: 110px 1fr 56px; gap: 10px; align-items: center; font-size: .88rem; }
   .bar-name { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bar-track { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 99px; width: 0; transition: width .7s ease; }
@@ -151,24 +160,8 @@
     <ul class="legend" id="legend"></ul>
   </aside>
 
-  <!-- Résultats -->
-  <section class="results">
-    <div class="card score-card">
-      <div class="gauge-wrap">
-        <svg class="gauge" viewBox="0 0 120 120">
-          <circle class="track" cx="60" cy="60" r="52"/>
-          <circle class="arc" id="gaugeArc" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
-        </svg>
-        <div class="gauge-label"><b id="scoreValue">–</b><small>/100</small></div>
-      </div>
-      <div class="score-text">
-        <h2>Green Score</h2>
-        <h3 id="scoreTitle">En attente d'une analyse</h3>
-        <p class="muted" id="scoreSub">Charge une image satellite puis lance l'analyse.</p>
-        <p class="meta" id="metaText"></p>
-      </div>
-    </div>
-
+  <!-- Visualisation (colonne centrale) -->
+  <section class="viewer-col">
     <div class="card">
       <div class="viewer-head">
         <h2>Visualisation</h2>
@@ -195,6 +188,26 @@
           <input type="range" id="opacity" min="0" max="100" value="55">
           <span id="opVal">55 %</span>
         </label>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Résultats (colonne droite) -->
+  <section class="insights">
+    <div class="card score-card">
+      <div class="gauge-wrap">
+        <svg class="gauge" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52"/>
+          <circle class="arc" id="gaugeArc" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+        </svg>
+        <div class="gauge-label"><b id="scoreValue">–</b><small>/100</small></div>
+      </div>
+      <div class="score-text">
+        <h2>Green Score</h2>
+        <h3 id="scoreTitle">En attente d'une analyse</h3>
+        <p class="muted" id="scoreSub">Charge une image satellite puis lance l'analyse.</p>
+        <p class="meta" id="metaText"></p>
       </div>
     </div>
 
@@ -368,7 +381,7 @@ function setGauge(score) {
   }
   const s = Math.max(0, Math.min(100, score));
   arc.style.strokeDashoffset = C * (1 - s / 100);
-  arc.style.stroke = `hsl(${25 + (110 * s) / 100}, 62%, 45%)`;
+  arc.style.stroke = `hsl(${25 + (110 * s) / 100}, 65%, 52%)`;
   $("#scoreValue").textContent = Math.round(s);
 }
 
