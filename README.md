@@ -11,8 +11,8 @@ The core workflow includes:
 
 <table align="center">
   <tr>
-    <th align="center"> Visualisation Streamlit</th>
-    <th align="center"> Front-end FastAPI</th>
+    <th align="center">Visualisation Streamlit</th>
+    <th align="center">Front-end FastAPI</th>
   </tr>
   <tr>
     <td align="center">
@@ -21,6 +21,10 @@ The core workflow includes:
     <td align="center">
       <img src="https://github.com/user-attachments/assets/c778b010-0b2c-4d0e-89ce-0cf08cfff58a" width="100%" />
     </td>
+  </tr>
+  <tr>
+    <td></td>
+    <td align="center"><sub><i>Demo run with a local baseline model (limited training): segmentation quality is not representative of the final model.</i></sub></td>
   </tr>
 </table>
 
